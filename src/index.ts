@@ -65,17 +65,22 @@ async function testAI() {
     console.log('AI에게 메시지 전송 중...');
     
     // AI 호출
-    const result = await generateText({
+    const result = streamText({
       model: copilot.chat('gemini-3.1-pro-preview'),
         // .chat()을 통해 endpoint를 /chat/completions로 변경 .chat()이 없으면 기본값인 /responses로 됨
         // chat: messages 중심(역할 기반 대화 포맷)
         // responses: 텍스트/툴/이미지/추론 등을 더 통합된 이벤트/아이템 구조로 반환
-      messages: [{ role: 'user', content: '안녕 반가워' }],
+      messages: [{ role: 'user', content: '태양계 행성 목록과 각각의 특징 말해줘' }],
     });
 
-    console.log('=== AI 응답 결과 ===');
-    console.log(result.text);
-    console.log('====================');
+    let finalText = '';
+    for await (const chunk of result.textStream) {
+      process.stdout.write(chunk);   // 토큰 들어올 때마다 바로 출력
+      finalText += chunk;
+    }
+
+    console.log('\n=== 최종 응답 ===');
+    console.log(finalText);
 
   } catch (error) {
     console.error('AI 호출 실패:', error);
