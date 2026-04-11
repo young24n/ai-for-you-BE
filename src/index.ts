@@ -1,10 +1,10 @@
 const dotenv = require('dotenv');
-const { streamText, generateText } = require('ai');
+const { streamText, convertToModelMessages } = require('ai');
 const { createOpenAI } = require('@ai-sdk/openai');
 
 dotenv.config();
 
-// 1. 임시 토큰 관리용 변수 (LBI의 githubCopilotTidToken 로직)
+// 1. 임시 토큰 관리용 변수
 let tidToken = '';
 let tidTokenExpiry = 0;
 
@@ -40,8 +40,7 @@ async function getCopilotToken(apiKey: string) {
   return tidToken;
 }
 
-// 3. 테스트용 함수
-async function testAI() {
+async function generationMessage(messages: any[]) {
   try {
     const rawKey = process.env.COPILOT_API_KEY || '';
     
@@ -62,30 +61,16 @@ async function testAI() {
       }
     });
 
-    console.log('AI에게 메시지 전송 중...');
-    
-    // AI 호출
-    const result = streamText({
-      model: copilot.chat('gemini-3.1-pro-preview'),
-        // .chat()을 통해 endpoint를 /chat/completions로 변경 .chat()이 없으면 기본값인 /responses로 됨
-        // chat: messages 중심(역할 기반 대화 포맷)
-        // responses: 텍스트/툴/이미지/추론 등을 더 통합된 이벤트/아이템 구조로 반환
-      messages: [{ role: 'user', content: '태양계 행성 목록과 각각의 특징 말해줘' }],
+    const streamObject = streamText({
+      model: copilot.chat('gpt-5.1'), // todo: 추후 모델명 변경 가능하게 파라미터 설정하면될 듯
+      messages: await convertToModelMessages(messages), // 프론트에서 assistant-ui가 쏴준 전체 기록을 그대로 전달
     });
 
-    let finalText = '';
-    for await (const chunk of result.textStream) {
-      process.stdout.write(chunk);   // 토큰 들어올 때마다 바로 출력
-      finalText += chunk;
-    }
-
-    console.log('\n=== 최종 응답 ===');
-    console.log(finalText);
+    return streamObject // stream object를 넘겨 줌
 
   } catch (error) {
-    console.error('AI 호출 실패:', error);
+    throw error;
   }
 }
 
-// 테스트 함수 바로 실행
-testAI();
+module.exports = { getCopilotToken, generationMessage };
