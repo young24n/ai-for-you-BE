@@ -12,8 +12,8 @@ app.use(express.urlencoded({extended:true}))
 
 dotenv.config()
 
-// index.ts에서 getCopilotToken 가져오기
-const { generationMessage } = require('./index.ts');
+// copilotService.ts에서 getCopilotToken 가져오기
+const { generationMessage } = require('./copilotService.ts');
 
 app.listen(8080, () => {
     console.log('http://localhost:8080 에서 서버 실행중')
