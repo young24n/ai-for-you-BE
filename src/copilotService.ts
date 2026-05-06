@@ -62,7 +62,7 @@ async function generationMessage(messages: any[]) {
     });
 
     const streamObject = streamText({
-      model: copilot.chat('gpt-4o'), // todo: 추후 모델명 변경 가능하게 파라미터 설정하면될 듯
+      model: copilot.chat('gemini-3.1-pro-preview'),
       messages: await convertToModelMessages(messages), // 프론트에서 assistant-ui가 쏴준 전체 기록을 그대로 전달
     });
 
