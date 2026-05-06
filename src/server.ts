@@ -6,7 +6,7 @@ const express = require('express')
 const cors = require('cors');
 const app = express()
 
-app.use(cors({ origin: '*' }));
+app.use(cors({ origin: 'https://ai-for-you-fe.won8560.workers.dev' }));
 app.use(express.json())
 app.use(express.urlencoded({extended:true})) 
 
