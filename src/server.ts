@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { MongoClient as MongoClientType } from 'mongodb'; // import는 require 밑에 하면 충돌남
+import type { MongoClient as MongoClientType, Db } from 'mongodb';
 
 const dotenv = require('dotenv');
 const express = require('express')
@@ -11,6 +11,20 @@ app.use(express.json())
 app.use(express.urlencoded({extended:true})) 
 
 dotenv.config()
+
+// 실제 작동에 필요한 모듈 불러오기 (값으로 사용될 클래스)
+const { MongoClient } = require('mongodb');
+
+let db: Db;
+const url = process.env.DATABASE_URL;
+
+// 생성할 때는 실제 객체인 'MongoClient' 사용
+new MongoClient(url).connect().then((client: MongoClientType) => { // 타입은 'MongoClientType' 사용
+  console.log('DB연결성공');
+  db = client.db('chat');
+}).catch((err: Error) => {  
+  console.log(err);
+})
 
 // copilotService.ts에서 getCopilotToken 가져오기
 const { generationMessage } = require('./copilotService.ts');
@@ -76,16 +90,9 @@ app.post('/validateApiKey', async (req: Request, res: Response) => {
   }
 })
 
-// 실제 작동에 필요한 모듈 불러오기 (값으로 사용될 클래스)
-const { MongoClient } = require('mongodb');
-
-let db;
-const url = process.env.DATABASE_URL;
-
-// 생성할 때는 실제 객체인 'MongoClient' 사용
-new MongoClient(url).connect().then((client: MongoClientType) => { // 타입은 'MongoClientType' 사용
-  console.log('DB연결성공');
-  db = client.db('chat');
-}).catch((err: Error) => {  
-  console.log(err);
-})
+app.get('/getMessages', async (req, res) => {
+  const chatRoom = await db.collection('chats').findOne({ roomId: req.query.roomId });
+  
+  // 찾은 문서 안의 messages 배열을 '그대로' 프론트로 던집니다. (전처리 얺음!)
+  res.json(chatRoom ? chatRoom.messages : []); 
+});
