@@ -19,7 +19,7 @@ let db: Db;
 const url = process.env.DATABASE_URL;
 
 // 생성할 때는 실제 객체인 'MongoClient' 사용
-new MongoClient(url).connect().then((client: MongoClientType) => { // 타입은 'MongoClientType' 사용
+new MongoClient(url).connect().then((client: MongoClientType) => { // 타입은 'MongoClientType' 사용(이런 타입도 존재하는구나..)
   console.log('DB연결성공');
   db = client.db('chat');
 }).catch((err: Error) => {  
@@ -53,8 +53,13 @@ app.post('/sendMessage', async (req: Request, res: Response) => {
     }
 
     // API Key가 유효하면 요청 처리
-    const messages = req.body.messages; // 찾는 속성이 무조건 messages 여야함 
-    const streamResult = await generationMessage(messages);
+    const messages = req.body.messages; 
+    const roomId = req.body.roomId;
+
+    // 서비스 함수 호출 시 roomId, authHeader, db 인스턴스를 넘겨줍니다.
+    const streamResult = await generationMessage(messages, roomId, authHeader, db);
+    
+    // 프론트로 스트리밍 응답 (DB 저장은 generationMessage에서 onFinish가 알아서 해줌)
     streamResult.pipeUIMessageStreamToResponse(res);
 
   } catch (error) {
