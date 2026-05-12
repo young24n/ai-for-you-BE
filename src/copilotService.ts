@@ -3,6 +3,7 @@ import type { Db } from 'mongodb';
 const dotenv = require('dotenv');
 const { streamText, convertToModelMessages } = require('ai');
 const { createOpenAI } = require('@ai-sdk/openai');
+const crypto = require('crypto');
 
 dotenv.config();
 
