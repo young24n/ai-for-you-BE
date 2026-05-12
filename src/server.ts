@@ -6,7 +6,12 @@ const express = require('express')
 const cors = require('cors');
 const app = express()
 
-app.use(cors({ origin: 'https://ai-for-you-fe.won8560.workers.dev' }));
+app.use(cors({ 
+  origin: [
+    'https://ai-for-you-fe.won8560.workers.dev', 
+    'http://localhost:5173'
+  ] 
+}));
 app.use(express.json())
 app.use(express.urlencoded({extended:true})) 
 
@@ -21,7 +26,7 @@ const url = process.env.DATABASE_URL;
 // 생성할 때는 실제 객체인 'MongoClient' 사용
 new MongoClient(url).connect().then((client: MongoClientType) => { // 타입은 'MongoClientType' 사용(이런 타입도 존재하는구나..)
   console.log('DB연결성공');
-  db = client.db('chat');
+  db = client.db('ai-chat');
 }).catch((err: Error) => {  
   console.log(err);
 })
