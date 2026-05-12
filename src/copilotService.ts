@@ -80,8 +80,16 @@ async function generationMessage(messages: any[], roomId: string, apiKey: string
 
         // 2. 프론트가 보낸 대화내역 + 방금 완성된 AI의 답변을 합침
         const finalMessages = [
-          ...messages, // 프론트에서 assistant-ui가 ID를 생성하지만 여기서 생성된 건 직접 붙여줘야함(충돌은 발생하지 않는다 함)
-          { id: crypto.randomUUID(), role: 'assistant', content: text, createdAt: new Date() }
+          ...messages, 
+          { 
+            id: crypto.randomUUID(), 
+            role: 'assistant', 
+            // 기본 Vercel AI SDK 호환성을 위해 content도 남겨두는 것을 권장
+            content: text, 
+            // assistant-ui가 파싱할 수 있도록 동일한 parts 구조 추가
+            parts: [{ type: 'text', text: text }], 
+            createdAt: new Date() 
+          }
         ];
 
         // 3. DB 저장 로직 (server.ts에 있던 코드가 여기로 깔끔하게 이동)
