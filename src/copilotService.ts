@@ -1,3 +1,5 @@
+import type { Db } from 'mongodb';
+
 const dotenv = require('dotenv');
 const { streamText, convertToModelMessages } = require('ai');
 const { createOpenAI } = require('@ai-sdk/openai');
@@ -40,7 +42,7 @@ async function getCopilotToken(apiKey: string) {
   return tidToken;
 }
 
-async function generationMessage(messages: any[]) {
+async function generationMessage(messages: any[], roomId: string, apiKey: string, db: Db) {
   try {
     const rawKey = process.env.COPILOT_API_KEY || '';
     
@@ -63,10 +65,41 @@ async function generationMessage(messages: any[]) {
 
     const streamObject = streamText({
       model: copilot.chat('gemini-3.1-pro-preview'),
-      messages: await convertToModelMessages(messages), // 프론트에서 assistant-ui가 쏴준 전체 기록을 그대로 전달
+      messages: await convertToModelMessages(messages),
+      
+      // onFinish: 스트리밍이 완료되면 백그라운드에서 알아서 실행되는 콜백
+      onFinish: async ({ text }: { text: string }) => {
+        if (!db || !roomId) return; // DB나 roomId가 없으면 저장 생략
+
+        // 1. 첫 메시지로 제목 생성
+        const firstUserMsg = messages.find((m: any) => m.role === 'user');
+        const title = firstUserMsg && firstUserMsg.parts[0] 
+          ? firstUserMsg.parts[0].text.substring(0, 20) 
+          : "새로운 대화";
+
+        // 2. 프론트가 보낸 대화내역 + 방금 완성된 AI의 답변을 합침
+        const finalMessages = [
+          ...messages, // 프론트에서 assistant-ui가 ID를 생성하지만 여기서 생성된 건 직접 붙여줘야함(충돌은 발생하지 않는다 함)
+          { id: crypto.randomUUID(), role: 'assistant', content: text, createdAt: new Date() }
+        ];
+
+        // 3. DB 저장 로직 (server.ts에 있던 코드가 여기로 깔끔하게 이동)
+        await db.collection('chats').updateOne(
+          { roomId: roomId },
+          { 
+            $set: { 
+              apiKey: apiKey, 
+              title: title, 
+              messages: finalMessages, 
+              updatedAt: new Date() 
+            } 
+          },
+          { upsert: true }
+        );
+      }
     });
 
-    return streamObject // stream object를 넘겨 줌
+    return streamObject;
 
   } catch (error) {
     throw error;
